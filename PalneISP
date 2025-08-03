@@ -1,0 +1,65 @@
+#!/bin/bash
+
+# Colors
+NEON_BLUE='\033[1;96m'
+NEON_PURPLE='\033[1;95m'
+NEON_GREEN='\033[1;92m'
+NEON_RED='\033[1;91m'
+NEON_YELLOW='\033[1;93m'
+WHITE='\033[1;97m'
+NC='\033[0m'
+
+# IP Range
+BASE_IP="84.207.205"
+START=1
+END=254
+LIVE_IPS=()
+
+# Banner
+clear
+echo -e "${NEON_PURPLE}╔══════════════════════════════════════════════╗"
+echo -e "║         ${NEON_BLUE}Welcome to ISP Panel Scanner${NEON_PURPLE}        ║"
+echo -e "╚══════════════════════════════════════════════╝${NC}"
+echo
+
+# Ask user
+echo -e "${NEON_YELLOW}Would you like to scan for live IPs in the range 84.207.205.0/24? (y/n): ${NC}\c"
+read -r confirm
+
+if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
+    echo -e "${NEON_RED}Scan aborted by user.${NC}"
+    exit 0
+fi
+
+echo
+echo -e "${NEON_BLUE}Scanning for live IPs... Please wait.${NC}"
+echo
+
+# Scanner Loop
+for i in $(seq $START $END); do
+    IP="${BASE_IP}.${i}"
+    ping -c 1 -W 1 "$IP" &>/dev/null
+
+    if [[ $? -eq 0 ]]; then
+        echo -e "${NEON_GREEN}[✔] $IP${NC}"
+        LIVE_IPS+=("$IP")
+    else
+        echo -e "${NEON_RED}[✖] $IP${NC}"
+    fi
+done
+
+# Summary
+echo
+echo -e "${NEON_PURPLE}╔══════════════════════════════════╗"
+echo -e "║        ${NEON_YELLOW}LIVE IPs FOUND SUMMARY${NEON_PURPLE}        ║"
+echo -e "╚══════════════════════════════════╝${NC}"
+
+if [[ ${#LIVE_IPS[@]} -eq 0 ]]; then
+    echo -e "${NEON_RED}No live IPs found.${NC}"
+else
+    for ip in "${LIVE_IPS[@]}"; do
+        echo -e "${NEON_GREEN}- $ip${NC}"
+    done
+fi
+
+echo -e "\n${NEON_BLUE}Scan complete.${NC}"
