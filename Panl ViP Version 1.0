@@ -1,0 +1,138 @@
+#!/bin/bash
+
+# Colors
+green='\033[0;32m'
+cyan='\033[0;36m'
+yellow='\033[1;33m'
+red='\033[1;31m'
+nc='\033[0m' # No Color
+
+clear
+echo -e "${cyan}=============================================="
+echo -e "${green}       Welcome to palne ViP Version 1.0"
+echo -e "${cyan}==============================================${nc}"
+sleep 1
+
+# Generate IPs from CIDR
+generate_ips() {
+  subnet=$1
+  count=$2
+  IFS='/' read -r base mask <<< "$subnet"
+  IFS='.' read -r o1 o2 o3 o4 <<< "$base"
+
+  if [[ "$mask" == "24" ]]; then
+    for ((i=1; i<255 && i<=count; i++)); do
+      echo "$o1.$o2.$o3.$i"
+    done
+  elif [[ "$mask" == "17" ]]; then
+    total=0
+    for ((b3=0; b3<=255 && total<count; b3++)); do
+      for ((b4=1; b4<255 && total<count; b4++)); do
+        echo "$o1.$o2.$b3.$b4"
+        ((total++))
+      done
+    done
+  else
+    echo -e "${red}Unsupported subnet: /$mask${nc}"
+  fi
+}
+
+# IP Scanner Function
+scan_ip() {
+  ip=$1
+  if ping -c 1 -W 1 "$ip" > /dev/null 2>&1; then
+    echo -e "${green}[LIVE]   $ip${nc}"
+  else
+    echo -e "${red}[DEAD]   $ip${nc}"
+  fi
+}
+
+# Country selection menu
+echo -e "${yellow}Select a country to scan its IP ranges:${nc}"
+echo -e "${green}1.${nc} United Arab Emirates"
+echo -e "${green}2.${nc} Kuwait"
+echo -e "${green}3.${nc} Qatar"
+echo -e "${green}4.${nc} Germany"
+echo -e "${green}5.${nc} Turkey"
+echo -ne "${cyan}Enter the country number: ${nc}"
+read choice
+
+clear
+echo -ne "${cyan}How many IPs to scan (per range)? ${nc}"
+read ip_count
+echo -e "${yellow}Scanning in progress... please wait...${nc}"
+echo ""
+
+# Define IP ranges per country
+case $choice in
+  1) # United Arab Emirates
+    ranges=(
+      "82.178.33.0/24"
+      "151.248.106.0/24"
+      "185.95.142.0/24"
+      "74.221.83.0/24"
+      "59.160.179.0/24"
+      "195.229.0.0/17"
+      "195.229.2.0/24"
+      "78.159.160.0/24"
+      "78.159.164.0/24"
+      "62.215.221.0/24"
+    )
+    ;;
+  2) # Kuwait
+    ranges=(
+      "78.100.2.0/24"
+      "78.100.48.0/24"
+      "78.101.32.0/24"
+      "82.148.96.0/24"
+      "82.148.124.0/24"
+      "89.211.12.0/24"
+      "212.77.207.0/24"
+      "212.77.211.0/24"
+    )
+    ;;
+  3) # Qatar
+    ranges=(
+      "84.207.225.0/24"
+      "84.207.205.0/24"
+      "84.207.228.0/24"
+      "84.207.229.0/24"
+      "89.19.232.0/24"
+    )
+    ;;
+  4) # Germany
+    ranges=(
+      "45.12.54.0/24"
+      "45.12.55.0/24"
+      "45.12.56.0/24"
+      "45.12.57.0/24"
+    )
+    ;;
+  5) # Turkey
+    ranges=(
+      "82.148.96.0/24"
+      "82.148.124.0/24"
+      "89.211.12.0/24"
+      "212.77.207.0/24"
+      "212.77.211.0/24"
+    )
+    ;;
+  *)
+    echo -e "${red}Invalid selection! Exiting.${nc}"
+    exit 1
+    ;;
+esac
+
+# Run scanning
+for range in "${ranges[@]}"; do
+  echo -e "${cyan}--- Scanning Range: $range ---${nc}"
+  ips=$(generate_ips "$range" "$ip_count")
+  for ip in $ips; do
+    scan_ip "$ip" &
+    sleep 0.1
+  done
+  wait
+  echo ""
+done
+
+echo -e "${green}✅ Scan complete. Thank you for using ViP Scanner.${nc}"
