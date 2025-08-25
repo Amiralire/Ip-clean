@@ -1,0 +1,20 @@
+#!/bin/bash
+
+range_start=80.227.0.1
+range_end=80.227.255.254
+count=0
+max=20
+
+for i in $(seq 1 255); do
+  for j in $(seq 1 255); do
+    ip="80.227.$i.$j"
+    timeout 0.5 bash -c "</dev/tcp/$ip/53" 2>/dev/null
+    if [ $? -eq 0 ]; then
+      echo "$ip"
+      count=$((count+1))
+      if [ $count -ge $max ]; then
+        exit 0
+      fi
+    fi
+  done
+done
